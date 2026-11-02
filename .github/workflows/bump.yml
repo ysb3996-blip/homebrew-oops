@@ -1,0 +1,82 @@
+# Once a day (and on demand), compare Formula/oops.rb with the latest oops
+# release. If the release is newer, point the formula at it, check that it
+# installs, passes `brew test` and `brew audit`, and open a pull request.
+name: Bump oops
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to bump to, like 0.3.0 (empty: the latest oops release)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Decide the version
+        id: version
+        env:
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          if [ -n "$REQUESTED" ]; then
+            version=${REQUESTED#v}
+          else
+            version=$(gh api repos/ysb3996-blip/oops/releases/latest --jq .tag_name)
+            version=${version#v}
+          fi
+          current=$(sed -n 's|.*/archive/refs/tags/v\(.*\)\.tar\.gz".*|\1|p' Formula/oops.rb)
+          branch="bump-oops-$version"
+          echo "requested $version, formula has $current"
+          if [ "$version" = "$current" ]; then
+            echo "Formula is up to date."
+          elif git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            echo "Branch $branch already exists; not opening another pull request."
+          else
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update the formula
+        if: steps.version.outputs.version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          url="https://github.com/ysb3996-blip/oops/archive/refs/tags/v$VERSION.tar.gz"
+          sha=$(curl -fsSL "$url" | shasum -a 256 | cut -d' ' -f1)
+          sed -i '' -e "s|^  url \".*\"|  url \"$url\"|" -e "s|^  sha256 \".*\"|  sha256 \"$sha\"|" Formula/oops.rb
+          git diff
+
+      - name: Install, test and audit
+        if: steps.version.outputs.version
+        run: |
+          brew tap ysb3996-blip/oops "$GITHUB_WORKSPACE"
+          cp Formula/oops.rb "$(brew --repository ysb3996-blip/oops)/Formula/oops.rb"
+          brew install --build-from-source ysb3996-blip/oops/oops
+          brew test ysb3996-blip/oops/oops
+          brew audit --strict --online ysb3996-blip/oops/oops
+
+      - name: Open a pull request
+        if: steps.version.outputs.version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BRANCH: ${{ steps.version.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -am "oops $VERSION"
+          git push origin "$BRANCH"
+          gh pr create --title "oops $VERSION" --body "Points the formula at oops v$VERSION (https://github.com/ysb3996-blip/oops/releases/tag/v$VERSION). \`brew install\`, \`brew test\` and \`brew audit --strict --online\` passed in this run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
