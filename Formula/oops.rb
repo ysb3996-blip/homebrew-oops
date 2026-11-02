@@ -1,8 +1,8 @@
 class Oops < Formula
   desc "Copy the last shell command and its output to the clipboard, secrets masked"
   homepage "https://github.com/ysb3996-blip/oops"
-  url "https://github.com/ysb3996-blip/oops/archive/refs/tags/v0.2.0.tar.gz"
-  sha256 "0b070c38347ca40c2bc7d09a769304817cb6484c3db62d8b579f6032092ad8f7"
+  url "https://github.com/ysb3996-blip/oops/archive/refs/tags/v0.3.0.tar.gz"
+  sha256 "9e6b36e3428abbfbe1ea73389b996872e7347784587ccbfd3f2329cf025e9aa2"
   license "MIT"
 
   depends_on "ruby"
@@ -21,6 +21,7 @@ class Oops < Formula
       Add one line to your rc file, then open a new tab:
         eval "$(oops init zsh)"    # ~/.zshrc
         eval "$(oops init bash)"   # ~/.bashrc
+        oops init fish | source    # ~/.config/fish/config.fish
     EOS
   end
 
