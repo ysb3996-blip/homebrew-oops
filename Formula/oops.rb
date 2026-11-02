@@ -21,6 +21,7 @@ class Oops < Formula
       Add one line to your rc file, then open a new tab:
         eval "$(oops init zsh)"    # ~/.zshrc
         eval "$(oops init bash)"   # ~/.bashrc
+        oops init fish | source    # ~/.config/fish/config.fish
     EOS
   end
 
