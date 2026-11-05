@@ -1,8 +1,8 @@
 class Oops < Formula
   desc "Copy the last shell command and its output to the clipboard, secrets masked"
   homepage "https://github.com/ysb3996-blip/oops"
-  url "https://github.com/ysb3996-blip/oops/archive/refs/tags/v0.4.0.tar.gz"
-  sha256 "cc1a8efe9779a0b363d6bac1d84b8f116282e3a14951ab4e0e1b5cddfbf079fd"
+  url "https://github.com/ysb3996-blip/oops/archive/refs/tags/v0.4.1.tar.gz"
+  sha256 "8b77cd42194506fa89cbf376d2b45ba254fa6ab5341fc98cbd39406b469eea66"
   license "MIT"
 
   depends_on "ruby"
